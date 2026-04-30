@@ -338,10 +338,19 @@ void loop()
     }
 
     // ======================================================
-    // Regular Mode
+    // DTQSYS Head Tracker via UART CRSF
     // ======================================================
-    if (radioMode != MODE_RX_ONLY)
-    {
-        vrxModule.updateChannelRamp();   // ESP-NOW senden
-    }
+    // Read CRSF data from DTQSYS Head Tracker on UART
+    // and send head tracking (pan/roll/tilt) via MSP/ESP-NOW
+    vrxModule.readAndSendHeadtracking();
+
+    // ======================================================
+    // Regular Channel Ramp Mode (Alternative)
+    // ======================================================
+    // Uncomment the line below to use the wave ramp instead of
+    // real head tracker data. Comment it out to use DTQSYS head tracker.
+    // if (radioMode != MODE_RX_ONLY)
+    // {
+    //     vrxModule.updateChannelRamp();   // ESP-NOW senden
+    // }
 }
