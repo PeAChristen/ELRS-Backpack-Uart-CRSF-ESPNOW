@@ -72,7 +72,8 @@ uint8_t UID[6] = {106,19,19,206,193,30};
 // You can change the default mode below.
 // It can also be changed later via Serial commands.
 // ======================================================
-RadioMode radioMode = MODE_BOTH;   // Default startup mode
+// RadioMode radioMode = MODE_BOTH;   // Default startup mode
+RadioMode radioMode = MODE_TX_ONLY;
 
 // Time window (in milliseconds) after boot during which
 // the RadioMode can be changed via Serial commands.
