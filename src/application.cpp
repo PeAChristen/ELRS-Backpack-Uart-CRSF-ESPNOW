@@ -39,7 +39,7 @@ void processCRSFFrame(uint8_t* buffer, uint16_t len)
     if (buffer[2] == CRSF_FRAMETYPE_RC_CHANNELS)   // CRSF_FRAMETYPE_RC_CHANNELS
     {
         LOG_INFO("RC Frame received (%d bytes)", len);
-        crsf.decodeRC();
+        crsf.decodeRC(&*crsf.crsf_buf);
         return;
     }
 
@@ -96,6 +96,7 @@ void processCRSFFrame(uint8_t* buffer, uint16_t len)
         } break;
 
         /* ================= VARIO ================= */
+        /*
         case CF_VARIO_ID:
         {
             // crsf.decodeTelemetry(buffer, len) hat bereits crsf.vario / crsf.varioF gesetzt
@@ -116,6 +117,7 @@ void processCRSFFrame(uint8_t* buffer, uint16_t len)
             }
 
         } break;
+        */
 
         /* ================= BATTERY ================= */
         case BATTERY_ID:
@@ -138,7 +140,9 @@ void processCRSFFrame(uint8_t* buffer, uint16_t len)
 
         } break;
 
+        
         /* ================= BAROMETER ================= */
+        /*
         case BARO_ALT_ID:
         {
             // Rohwert aus CRSF-Klasse
@@ -146,6 +150,7 @@ void processCRSFFrame(uint8_t* buffer, uint16_t len)
             LOG_INFO("BARO: raw=%u", alt_raw);
 
         } break;
+        */
 
         /* ================= ATTITUDE ================= */
         case ATTITUDE_ID:

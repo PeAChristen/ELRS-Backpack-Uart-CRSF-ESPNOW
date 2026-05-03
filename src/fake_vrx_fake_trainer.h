@@ -15,12 +15,8 @@ class FakeVRXFakeTrainer
 public:
     void init(const uint8_t* uid);
 
-    void readAndSendHeadtracking();  // NEW: Read CRSF from DTQSYS and send via MSP
-    void sendHeadtrackingViaMSP(uint16_t pan, uint16_t roll, uint16_t tilt);
-    void sendTrainerMode16ch(uint16_t *channels);
-    
-    // Deprecated - use readAndSendHeadtracking() instead
     void sendFakeHeadtracking(uint16_t pan, uint16_t roll, uint16_t tilt);
+    void sendTrainerMode16ch(uint16_t *channels);
     void updateChannelRamp();
 
 private:

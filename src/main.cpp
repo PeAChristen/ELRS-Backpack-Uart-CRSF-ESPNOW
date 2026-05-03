@@ -53,7 +53,8 @@ enum RadioMode
 //enter your binding phrase, then make a note of the UID. Enter the 6 numbers between the commas
 // Config Elrs Binding
 //uint8_t UID[6] = {0,0,0,0,0,0}; // this is my UID. You have to change it to your once, should look 
-uint8_t UID[6] = {106,19,19,206,193,30};
+//uint8_t UID[6] = {106,19,19,206,193,30};
+uint8_t UID[6] = {48,183,109,106,23,63};
 
 
 // ======================================================
@@ -72,8 +73,7 @@ uint8_t UID[6] = {106,19,19,206,193,30};
 // You can change the default mode below.
 // It can also be changed later via Serial commands.
 // ======================================================
-// RadioMode radioMode = MODE_BOTH;   // Default startup mode
-RadioMode radioMode = MODE_TX_ONLY;
+RadioMode radioMode = MODE_TX_ONLY;   // Default startup mode
 
 // Time window (in milliseconds) after boot during which
 // the RadioMode can be changed via Serial commands.
@@ -122,6 +122,42 @@ QueueHandle_t rxqueue;
 FakeVRXFakeTrainer vrxModule;
 MSP recv_msp;
 CRSF crsf;
+
+// ======================================================
+// Uart for CRSF
+// ======================================================
+
+int16_t uart_pitch = 0;
+int16_t uart_roll = 0;    
+int16_t uart_yaw = 0;
+
+#define DTQSYS_UART_PORT 1          // Adjust to your ESP32-S3 UART port
+#define DTQSYS_RX_PIN 7           // Adjust to your ESP32-S3 pin
+#define DTQSYS_TX_PIN -1           // Not needed (RX only)
+#define DTQSYS_BAUD 420000         // CRSF standard baud rate
+#define DTQSYS_INVERT false        // CRSF does not use inverted signals
+
+CRSF crsf_uart;
+HardwareSerial dtqsysSerial(DTQSYS_UART_PORT);
+
+int getCrsfChannel(const uint8_t *payload, int ch)
+{
+    // varje kanal är 11 bit
+    int bitIndex = ch * 11;
+
+    int byteIndex = bitIndex / 8;
+    int bitOffset = bitIndex % 8;
+
+    uint32_t value = 
+        (payload[byteIndex] |
+        (payload[byteIndex + 1] << 8) |
+        (payload[byteIndex + 2] << 16));
+
+    value >>= bitOffset;
+    value &= 0x7FF; // 11 bit mask
+
+    return (int)value; // 0–2047
+}
 
 // ===============================
 // RC Channels
@@ -194,6 +230,15 @@ void initSerial()
 {
     Serial.begin(115200);
     LOG_INFO("Start");
+}
+
+void initUartSerial()
+{
+    delay(1000);
+    dtqsysSerial.begin(DTQSYS_BAUD, SERIAL_8N1, DTQSYS_RX_PIN, DTQSYS_TX_PIN);
+    LOG_INFO("UART Serial for CRSF initialized"); 
+    crsf_uart.initialise(dtqsysSerial);
+    delay(1000);
 }
 
 void initWiFi()
@@ -293,6 +338,7 @@ void setup() {
     initESP32Queue();
     initESPNow();
     vrxModule.init(UID);
+    initUartSerial();
     initRamp();
     initInfo();
 }
@@ -339,19 +385,43 @@ void loop()
     }
 
     // ======================================================
-    // DTQSYS Head Tracker via UART CRSF
+    // Regular Mode
     // ======================================================
-    // Read CRSF data from DTQSYS Head Tracker on UART
-    // and send head tracking (pan/roll/tilt) via MSP/ESP-NOW
-    vrxModule.readAndSendHeadtracking();
+    if (radioMode != MODE_RX_ONLY)
+    {
+        // Read CRSF data from UART
+        if(dtqsysSerial.available()){
 
-    // ======================================================
-    // Regular Channel Ramp Mode (Alternative)
-    // ======================================================
-    // Uncomment the line below to use the wave ramp instead of
-    // real head tracker data. Comment it out to use DTQSYS head tracker.
-    // if (radioMode != MODE_RX_ONLY)
-    // {
-    //     vrxModule.updateChannelRamp();   // ESP-NOW senden
-    // }
+            if (crsf_uart.readCrsfFrame(crsf_uart.frame_lth))
+            {
+                    
+                uint8_t frame_id = crsf_uart.decodeTelemetry(&*crsf_uart.crsf_buf, crsf_uart.frame_lth);
+                
+                if (frame_id == 0x16) // CHANNELS_ID
+                {
+                    const uint8_t *payload = &crsf_uart.crsf_buf[3];
+                    
+                    //Serial.print("CRSF HT Channels in buffer: ");
+                    
+                    uart_pitch = getCrsfChannel(payload,0); // kanal 3 = pitch
+                    uart_roll = getCrsfChannel(payload,1);  // kanal 4 = roll
+                    uart_yaw = getCrsfChannel(payload,2);  // kanal 5 = yaw
+                                        
+                    //Serial.printf("Pitch: %d, Roll: %d, Yaw: %d\n", uart_pitch, uart_roll, uart_yaw);
+                    
+                    vrxModule.sendFakeHeadtracking(uart_pitch, uart_roll, uart_yaw);
+
+                    //Serial.println();
+                }
+            }
+        }
+
+        // Send headtracking data via ESP-NOW
+        //vrxModule.sendFakeHeadtracking(uart_pitch, uart_roll, uart_yaw);   // ESP-NOW senden
+
+        // Send trainer/VTX channels via ESP-NOW
+        // vrxModule.updateChannelRamp();   // ESP-NOW senden
+        
+        //vrxModule.sendTrainerMode16ch(rampChannels);
+    }
 }
