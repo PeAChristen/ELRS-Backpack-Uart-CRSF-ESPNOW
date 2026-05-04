@@ -28,8 +28,8 @@
 // =======================================================
 // LED Configuration
 // =======================================================
-#define LED_PIN 21         // Pin connected to the LED strip
-#define NUM_LEDS 1         // Number of LEDs in the strip
+#define LED_PIN 21         // Pin connected to the LED
+#define NUM_LEDS 1         // Number of LEDs
 #define LED_BRIGHTNESS 50 // Brightness (0-255)
 #define LED_TYPE NEO_GRB + NEO_KHZ800
 #define LED_RED 255, 0, 0
@@ -49,10 +49,11 @@ bool dataReceived = false;
 // LED Solid Green: Connection established and good data received.
 // LED Blinking Yellow: Connection established but no data received (e.g. UART data missing)
 
-Adafruit_NeoPixel strip(NUM_LEDS, LED_PIN, NEO_GRB + NEO_KHZ800);
+Adafruit_NeoPixel led(NUM_LEDS, LED_PIN, NEO_GRB + NEO_KHZ800);
+
 void setLedColor(uint8_t r, uint8_t g, uint8_t b) {
-    strip.setPixelColor(0, strip.Color(r, g, b));
-    strip.show();
+    led.setPixelColor(0, led.Color(r, g, b));
+    led.show();
 }
 
 void handleLedBlinking() {
