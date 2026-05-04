@@ -24,7 +24,7 @@
 #include <Adafruit_NeoPixel.h> // https://www.oceanlabz.in/esp32-s3-ws2812-rgb-led-with-arduino-ide-2/
 
 
-// TODO Add Led Strip for visual feedback, e.g. on connection status, mode, etc.
+// TODO Add Led for visual feedback, e.g. on connection status, mode, etc.
 // =======================================================
 // LED Configuration
 // =======================================================
