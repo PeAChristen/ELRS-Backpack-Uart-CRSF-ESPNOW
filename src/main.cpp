@@ -86,16 +86,21 @@ void handleLedBlinking() {
 }
 
 void updateLedStatus(bool connectionGood, bool dataReceived, bool blinkState) {
-    if (!connectionGood && !dataReceived) {
-        setLedColor(LED_RED); // Solid Red
-    } else if (!connectionGood && dataReceived) {
-        setLedColor(LED_RED); // Blinking Red
-        // Implement blinking logic in the main loop
-    } else if (connectionGood && dataReceived) {
-        setLedColor(LED_GREEN); // Solid Green
-    } else if (connectionGood && !dataReceived) {
-        setLedColor(LED_YELLOW); // Blinking Yellow
-        // Implement blinking logic in the main loop
+    if(blinkState){
+        if (!connectionGood && !dataReceived) {
+            setLedColor(LED_RED); // Solid Red
+        } else if (!connectionGood && dataReceived) {
+            setLedColor(LED_RED); // Blinking Red
+            // Implement blinking logic in the main loop
+        } else if (connectionGood && dataReceived) {
+            setLedColor(LED_GREEN); // Solid Green
+        } else if (connectionGood && !dataReceived) {
+            setLedColor(LED_YELLOW); // Blinking Yellow
+            // Implement blinking logic in the main loop
+        }
+    }else{
+        led.setPixelColor (0, led.Color (LED_OFF));
+        led.show();
     }
 }
 
