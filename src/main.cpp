@@ -21,6 +21,66 @@
 #include <math.h>
 #include "application.h"
 #include "types.h"
+#include <Adafruit_NeoPixel.h> // https://www.oceanlabz.in/esp32-s3-ws2812-rgb-led-with-arduino-ide-2/
+
+
+// TODO Add Led Strip for visual feedback, e.g. on connection status, mode, etc.
+// =======================================================
+// LED Configuration
+// =======================================================
+#define LED_PIN 21         // Pin connected to the LED strip
+#define NUM_LEDS 1         // Number of LEDs in the strip
+#define LED_BRIGHTNESS 50 // Brightness (0-255)
+#define LED_TYPE NEO_GRB + NEO_KHZ800
+#define LED_RED 255, 0, 0
+#define LED_GREEN 0, 255, 0
+#define LED_YELLOW 255, 255, 0
+#define LED_OFF 0, 0, 0
+#define LED_BLINK_INTERVAL 500 // Blink interval in milliseconds
+#define LED_CONNECTION_TIMEOUT 5000 // Time in milliseconds to consider connection lost
+#define LED_UART_TIMEOUT 2000 // Time in milliseconds to consider UART data lost
+
+bool connectionGood = false;
+bool dataReceived = false;
+
+
+// LED Solid Red: No connection and no data received.
+// LED Blinking Red: No connection but data received (e.g. from UART).
+// LED Solid Green: Connection established and good data received.
+// LED Blinking Yellow: Connection established but no data received (e.g. UART data missing)
+
+Adafruit_NeoPixel strip(NUM_LEDS, LED_PIN, NEO_GRB + NEO_KHZ800);
+void setLedColor(uint8_t r, uint8_t g, uint8_t b) {
+    strip.setPixelColor(0, strip.Color(r, g, b));
+    strip.show();
+}
+
+void handleLedBlinking() {
+    static bool blinkState = false;
+    static unsigned long lastBlinkTime = 0;
+
+    if (millis() - lastBlinkTime >= LED_BLINK_INTERVAL) {
+        blinkState = !blinkState;
+        lastBlinkTime = millis();
+    }
+
+    // Update LED status based on connection and data reception
+    updateLedStatus(connectionGood, dataReceived, blinkState);
+}
+
+void updateLedStatus(bool connectionGood, bool dataReceived, bool blinkState) {
+    if (!connectionGood && !dataReceived) {
+        setLedColor(LED_RED); // Solid Red
+    } else if (!connectionGood && dataReceived) {
+        setLedColor(LED_RED); // Blinking Red
+        // Implement blinking logic in the main loop
+    } else if (connectionGood && dataReceived) {
+        setLedColor(LED_GREEN); // Solid Green
+    } else if (connectionGood && !dataReceived) {
+        setLedColor(LED_YELLOW); // Blinking Yellow
+        // Implement blinking logic in the main loop
+    }
+}
 
 // ======================================================
 // 2. Platform Selection (ESP32 / ESP8266)
