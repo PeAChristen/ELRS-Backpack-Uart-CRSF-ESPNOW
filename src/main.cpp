@@ -51,6 +51,14 @@ bool dataReceived = false;
 
 Adafruit_NeoPixel led(NUM_LEDS, LED_PIN, NEO_GRB + NEO_KHZ800);
 
+bool get_wifi_connection_status(){
+
+}
+
+bool get_data_recieved_status(){
+    
+}
+
 void setLedColor(uint8_t r, uint8_t g, uint8_t b) {
     led.setPixelColor(0, led.Color(r, g, b));
     led.show();
