@@ -53,10 +53,18 @@ Adafruit_NeoPixel led(NUM_LEDS, LED_PIN, NEO_GRB + NEO_KHZ800);
 
 bool get_wifi_connection_status(){
 
+    Serial.print("Wifi Status: ")
+    Serial.println(WiFi.status());
+
+    return true;
 }
 
-bool get_data_recieved_status(){
+bool get_uart_crsf_status(){
     
+    Serial.print("DTQSYS UART Status: ")
+    Serial.println(dtqsysSerial.available());
+    
+    return true;
 }
 
 void setLedColor(uint8_t r, uint8_t g, uint8_t b) {
