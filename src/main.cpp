@@ -35,13 +35,12 @@
 #define LED_RED 255, 0, 0
 #define LED_GREEN 0, 255, 0
 #define LED_YELLOW 255, 255, 0
-#define LED_OFF 0, 0, 0
 #define LED_BLINK_INTERVAL 500 // Blink interval in milliseconds
 #define LED_CONNECTION_TIMEOUT 5000 // Time in milliseconds to consider connection lost
 #define LED_UART_TIMEOUT 2000 // Time in milliseconds to consider UART data lost
 
 bool connectionGood = false;
-bool dataReceived = false;
+bool dataGood = false;
 
 
 // LED Solid Red: No connection and no data received.
@@ -50,6 +49,10 @@ bool dataReceived = false;
 // LED Blinking Yellow: Connection established but no data received (e.g. UART data missing)
 
 Adafruit_NeoPixel led(NUM_LEDS, LED_PIN, NEO_GRB + NEO_KHZ800);
+
+void init_led(){
+    led.begin();
+}
 
 bool get_wifi_connection_status(){
 
@@ -81,26 +84,28 @@ void handleLedBlinking() {
         lastBlinkTime = millis();
     }
 
+    connectionGood = get_wifi_connection_status();
+    dataGood = get_uart_crsf_status()
+
     // Update LED status based on connection and data reception
-    updateLedStatus(connectionGood, dataReceived, blinkState);
+    updateLedStatus(connectionGood, dataGood, blinkState);
 }
 
-void updateLedStatus(bool connectionGood, bool dataReceived, bool blinkState) {
+void updateLedStatus(bool connectionGood, bool dataGood, bool blinkState) {
     if(blinkState){
-        if (!connectionGood && !dataReceived) {
+        if (!connectionGood && !dataGood) {
             setLedColor(LED_RED); // Solid Red
-        } else if (!connectionGood && dataReceived) {
+        } else if (!connectionGood && dataGood) {
             setLedColor(LED_RED); // Blinking Red
             // Implement blinking logic in the main loop
-        } else if (connectionGood && dataReceived) {
+        } else if (connectionGood && dataGood) {
             setLedColor(LED_GREEN); // Solid Green
-        } else if (connectionGood && !dataReceived) {
+        } else if (connectionGood && !dataGood) {
             setLedColor(LED_YELLOW); // Blinking Yellow
             // Implement blinking logic in the main loop
         }
     }else{
-        led.setPixelColor (0, led.Color (LED_OFF));
-        led.show();
+        led.clear();
     }
 }
 
