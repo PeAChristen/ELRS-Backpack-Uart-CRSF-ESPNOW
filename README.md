@@ -1,4 +1,4 @@
-Made som changes so this works with DTQSYS Headtracker and ESP32-S3-Zero via UART CRSF to ELRX TX Backpack
+Made som changes so this works with DTQSYS Headtracker and ESP32-S3-Zero via UART CRSF to ELRS TX Backpack
 
 
 # 🚀 ELRS Backpack ESP-NOW Bridge (ESP8266 / ESP32)
