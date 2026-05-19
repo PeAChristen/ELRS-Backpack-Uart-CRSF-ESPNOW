@@ -24,23 +24,26 @@
 #include <Adafruit_NeoPixel.h> // https://www.oceanlabz.in/esp32-s3-ws2812-rgb-led-with-arduino-ide-2/
 
 
-// TODO Add Led for visual feedback, e.g. on connection status, mode, etc.
+// TODO Add Led Strip for visual feedback, e.g. on connection status, mode, etc.
 // =======================================================
 // LED Configuration
 // =======================================================
-#define LED_PIN 21         // Pin connected to the LED
-#define NUM_LEDS 1         // Number of LEDs
+#define LED_PIN 21         // Pin connected to the LED strip
+#define NUM_LEDS 1         // Number of LEDs in the strip
 #define LED_BRIGHTNESS 50 // Brightness (0-255)
 #define LED_TYPE NEO_GRB + NEO_KHZ800
-#define LED_RED 255, 0, 0
-#define LED_GREEN 0, 255, 0
-#define LED_YELLOW 255, 255, 0
+#define LED_GREEN 255, 0, 0
+#define LED_RED 0, 255, 0
+#define LED_YELLOW 150, 255, 0
+#define LED_OFF 0, 0, 0
 #define LED_BLINK_INTERVAL 500 // Blink interval in milliseconds
 #define LED_CONNECTION_TIMEOUT 5000 // Time in milliseconds to consider connection lost
 #define LED_UART_TIMEOUT 2000 // Time in milliseconds to consider UART data lost
 
+
 bool connectionGood = false;
-bool dataGood = false;
+bool dataReceived = false;
+bool dataLost = false; // Flag to indicate if data is considered lost due to timeout
 
 
 // LED Solid Red: No connection and no data received.
@@ -48,66 +51,71 @@ bool dataGood = false;
 // LED Solid Green: Connection established and good data received.
 // LED Blinking Yellow: Connection established but no data received (e.g. UART data missing)
 
-Adafruit_NeoPixel led(NUM_LEDS, LED_PIN, NEO_GRB + NEO_KHZ800);
+Adafruit_NeoPixel strip(NUM_LEDS, LED_PIN, NEO_GRB + NEO_KHZ800);
 
-void init_led(){
-    led.begin();
-}
-
-bool get_wifi_connection_status(){
-
-    Serial.print("Wifi Status: ")
-    Serial.println(WiFi.status());
-
-    return true;
-}
-
-bool get_uart_crsf_status(){
-    
-    Serial.print("DTQSYS UART Status: ")
-    Serial.println(dtqsysSerial.available());
-    
-    return true;
+void initLed() {
+    strip.begin();
+    strip.setBrightness(LED_BRIGHTNESS);
+    strip.show(); // Initialize all pixels to 'off'
 }
 
 void setLedColor(uint8_t r, uint8_t g, uint8_t b) {
-    led.setPixelColor(0, led.Color(r, g, b));
-    led.show();
+    strip.setPixelColor(0, strip.Color(r, g, b));
+    strip.show();
+}
+
+void data_timeoutCheck() {
+    static unsigned long lastDataTime = 0;
+
+    if (dataReceived) {
+        lastDataTime = millis();
+        dataLost = false; // Reset data lost flag when new data is received
+    } else if (!dataLost && millis() - lastDataTime > LED_UART_TIMEOUT) {
+        dataLost = true; // Set flag to indicate data is considered lost
+    }
+
+}
+
+
+void updateLedStatus(bool connectionGood, bool dataReceived, bool blinkState) {
+    if (!connectionGood && !dataReceived) {
+        setLedColor(LED_RED); // Solid Red
+    } else if (!connectionGood && dataReceived) {
+        //etLedColor(LED_RED); // Blinking Red
+        // Implement blinking logic in the main loop
+        if(blinkState) {
+            setLedColor(LED_RED); // Blinking Red
+        } else {
+            setLedColor(LED_OFF); // Turn off LED during "off" phase of blinking
+        }
+    } else if (connectionGood && dataReceived) {
+        setLedColor(LED_GREEN); // Solid Green
+    } else if (connectionGood && !dataReceived) {
+        // setLedColor(LED_YELLOW); // Blinking Yellow
+        // Implement blinking logic in the main loop
+        if(blinkState) {
+            setLedColor(LED_YELLOW); // Blinking Yellow
+        } else {
+            setLedColor(LED_OFF); // Turn off LED during "off" phase of blinking
+        }
+    }
 }
 
 void handleLedBlinking() {
     static bool blinkState = false;
     static unsigned long lastBlinkTime = 0;
-
+    
     if (millis() - lastBlinkTime >= LED_BLINK_INTERVAL) {
         blinkState = !blinkState;
         lastBlinkTime = millis();
     }
 
-    connectionGood = get_wifi_connection_status();
-    dataGood = get_uart_crsf_status()
+    data_timeoutCheck(); // Check for data timeout and update dataLost flag
 
-    // Update LED status based on connection and data reception
-    updateLedStatus(connectionGood, dataGood, blinkState);
+    updateLedStatus(connectionGood, !dataLost, blinkState);
+
 }
 
-void updateLedStatus(bool connectionGood, bool dataGood, bool blinkState) {
-    if(blinkState){
-        if (!connectionGood && !dataGood) {
-            setLedColor(LED_RED); // Solid Red
-        } else if (!connectionGood && dataGood) {
-            setLedColor(LED_RED); // Blinking Red
-            // Implement blinking logic in the main loop
-        } else if (connectionGood && dataGood) {
-            setLedColor(LED_GREEN); // Solid Green
-        } else if (connectionGood && !dataGood) {
-            setLedColor(LED_YELLOW); // Blinking Yellow
-            // Implement blinking logic in the main loop
-        }
-    }else{
-        led.clear();
-    }
-}
 
 // ======================================================
 // 2. Platform Selection (ESP32 / ESP8266)
@@ -214,9 +222,9 @@ CRSF crsf;
 // Uart for CRSF
 // ======================================================
 
-volatile int16_t uart_pitch = 0;
-volatile int16_t uart_roll = 0;    
-volatile int16_t uart_yaw = 0;
+int16_t uart_pitch = 0;
+int16_t uart_roll = 0;    
+int16_t uart_yaw = 0;
 
 #define DTQSYS_UART_PORT 1          // Adjust to your ESP32-S3 UART port
 #define DTQSYS_RX_PIN 7           // Adjust to your ESP32-S3 pin
@@ -304,8 +312,10 @@ void OnDataSent(uint8_t *mac_addr, uint8_t status) {
 
     if (success) {
         LOG_DEBUG_INLINE("ESP-NOW Send OK          ");
+        connectionGood = true;
     } else {
         LOG_ERROR_INLINE("ESP-NOW Send FAIL (Status: %d) t=%lu ms      ", status, millis());
+        connectionGood = false;
     }
 }
 
@@ -363,7 +373,7 @@ void initESPNow()
     }
 
     esp_now_register_send_cb(OnDataSent);
-    esp_now_register_recv_cb(OnDataRecv);
+    //esp_now_register_recv_cb(OnDataRecv); // Trying without receive callback, as we only want to send data in this example. Receiving is disabled to save resources and avoid potential issues with queue handling.
 
     #if defined(ESP32)
         esp_now_peer_info_t peerInfo = {};
@@ -426,8 +436,9 @@ void setup() {
     initESPNow();
     vrxModule.init(UID);
     initUartSerial();
-    initRamp();
-    initInfo();
+    //initRamp();
+    //initInfo();
+    initLed();
 }
 
 // ======================================================
@@ -437,9 +448,17 @@ void setup() {
 void loop()
 {
 
+
+    // ======================================================
+    // Handle LED Blinking
+    // ======================================================
+    handleLedBlinking();
+
+
     // ======================================================
     // Serial Mode Switch (only during config window)
     // ======================================================
+    /*
     if (millis() - configWindowStart < CONFIG_WINDOW_MS)
     {
         if (Serial.available())
@@ -455,11 +474,13 @@ void loop()
             }
         }
     }
+    */
 
     // ======================================================
     // ESP-NOW Receive Handling (CRSF)
     // ======================================================
-   if (radioMode != MODE_TX_ONLY)
+    /*
+    if (radioMode != MODE_TX_ONLY)
     {
         if (espnow_received)
         {
@@ -470,6 +491,7 @@ void loop()
             processCRSFFrame(crsf.crsf_buf, crsf_len);
         }
     }
+    */
 
     // ======================================================
     // Regular Mode
@@ -478,7 +500,7 @@ void loop()
     {
         // Read CRSF data from UART
         if(dtqsysSerial.available()){
-
+            dataReceived = true; // Set flag to indicate data reception
             if (crsf_uart.readCrsfFrame(crsf_uart.frame_lth))
             {
                     
@@ -501,6 +523,8 @@ void loop()
                     //Serial.println();
                 }
             }
+        }else{
+            dataReceived = false; // No data available
         }
 
         // Send headtracking data via ESP-NOW

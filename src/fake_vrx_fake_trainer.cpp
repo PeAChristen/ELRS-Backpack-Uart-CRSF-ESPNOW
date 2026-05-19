@@ -15,8 +15,9 @@ void FakeVRXFakeTrainer::sendFakeHeadtracking(uint16_t pan, uint16_t roll, uint1
     packet.makeCommand();
     packet.function = MSP_ELRS_BACKPACK_SET_PTR;
 
-    packet.addByte(pan & 0xFF);
-    packet.addByte(pan >> 8);
+    // Adding channels in little-endian format (LSB first, MSB second)
+    packet.addByte(pan & 0xFF); // Adding channels in little-endian format (LSB first) by masking with 0xFF to get the lower byte
+    packet.addByte(pan >> 8);   // Adding channels in little-endian format (MSB second) by shifting right 8 bits to get the upper byte
 
     packet.addByte(roll & 0xFF);
     packet.addByte(roll >> 8);
@@ -40,8 +41,8 @@ void FakeVRXFakeTrainer::sendTrainerMode16ch(uint16_t *channels)
     packet.makeCommand();
     packet.function = MSP_ELRS_BACKPACK_SET_PTR;
 
-    packet.addByte(channels[0] & 0xFF);
-    packet.addByte(channels[0] >> 8);
+    packet.addByte(channels[0] & 0xFF); 
+    packet.addByte(channels[0] >> 8);   
 
     packet.addByte(channels[1] & 0xFF);
     packet.addByte(channels[1] >> 8);
