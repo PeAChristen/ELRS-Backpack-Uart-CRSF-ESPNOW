@@ -214,9 +214,9 @@ CRSF crsf;
 // Uart for CRSF
 // ======================================================
 
-int16_t uart_pitch = 0;
-int16_t uart_roll = 0;    
-int16_t uart_yaw = 0;
+volatile int16_t uart_pitch = 0;
+volatile int16_t uart_roll = 0;    
+volatile int16_t uart_yaw = 0;
 
 #define DTQSYS_UART_PORT 1          // Adjust to your ESP32-S3 UART port
 #define DTQSYS_RX_PIN 7           // Adjust to your ESP32-S3 pin
