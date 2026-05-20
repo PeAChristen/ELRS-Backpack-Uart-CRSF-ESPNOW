@@ -15,7 +15,7 @@ class FakeVRXFakeTrainer
 public:
     void init(const uint8_t* uid);
 
-    void sendHeadtracking(const uint8_t* crsfPayload)
+    void sendHeadtracking(const uint8_t* crsfPayload);
     void sendFakeHeadtracking(uint16_t pan, uint16_t roll, uint16_t tilt);
     void sendTrainerMode16ch(uint16_t *channels);
     void updateChannelRamp();
