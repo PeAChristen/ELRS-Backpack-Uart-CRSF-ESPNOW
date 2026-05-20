@@ -505,15 +505,17 @@ void loop()
                 {
                     const uint8_t *payload = &crsf_uart.crsf_buf[3];
                     
+                    vrxModule.sendHeadtracking(payload);
+
                     //Serial.print("CRSF HT Channels in buffer: ");
                     
-                    uart_pitch = getCrsfChannel(payload,0); // kanal 3 = pitch
-                    uart_roll = getCrsfChannel(payload,1);  // kanal 4 = roll
-                    uart_yaw = getCrsfChannel(payload,2);  // kanal 5 = yaw
+                    //uart_pitch = getCrsfChannel(payload,0); // kanal 3 = pitch
+                    //uart_roll = getCrsfChannel(payload,1);  // kanal 4 = roll
+                    //uart_yaw = getCrsfChannel(payload,2);  // kanal 5 = yaw
                                         
                     //Serial.printf("Pitch: %d, Roll: %d, Yaw: %d\n", uart_pitch, uart_roll, uart_yaw);
                     
-                    vrxModule.sendFakeHeadtracking(uart_pitch, uart_roll, uart_yaw);
+                    //vrxModule.sendFakeHeadtracking(uart_pitch, uart_roll, uart_yaw);
 
                     //Serial.println();
                 }

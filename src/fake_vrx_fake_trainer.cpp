@@ -14,6 +14,43 @@ inline void addLE16(mspPacket_t &pkt, uint16_t v)
     pkt.addByte(v >> 8);
 }
 
+// Direkt från CRSF-payload till little-endian bytes utan uint16_t-mellansteg
+void extractChannelToLE(const uint8_t* payload, int ch, mspPacket_t& packet)
+{
+    int bitIndex = ch * 11;
+    int byteIndex = bitIndex / 8;
+    int bitOffset = bitIndex % 8;
+
+    uint32_t raw =
+        ((uint32_t)payload[byteIndex]) |
+        ((uint32_t)payload[byteIndex + 1] << 8) |
+        ((uint32_t)payload[byteIndex + 2] << 16);
+
+    uint16_t value = (raw >> bitOffset) & 0x7FF;
+
+    // Direkt in i paketet, inget uint16_t som hänger runt
+    packet.addByte(value & 0xFF);
+    packet.addByte(value >> 8);
+}
+
+void FakeVRXFakeTrainer::sendHeadtracking(const uint8_t* crsfPayload)
+{
+    mspPacket_t packet;
+    packet.reset();
+    packet.makeCommand();
+    packet.function = MSP_ELRS_BACKPACK_SET_PTR;
+
+    extractChannelToLE(crsfPayload, 0, packet); // pan
+    extractChannelToLE(crsfPayload, 1, packet); // roll
+    extractChannelToLE(crsfPayload, 2, packet); // tilt
+
+    uint8_t buf[64];
+    uint8_t size = recv_msp.convertToByteArray(&packet, buf);
+
+    if (esp_now_send(_uid, buf, size) != 0)
+        LOG_WARN("esp_now_send failed");
+}
+
 
 void FakeVRXFakeTrainer::sendFakeHeadtracking(uint16_t pan, uint16_t roll, uint16_t tilt)
 {
