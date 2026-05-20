@@ -40,6 +40,7 @@
 #define LED_CONNECTION_TIMEOUT 5000 // Time in milliseconds to consider connection lost
 #define LED_UART_TIMEOUT 2000 // Time in milliseconds to consider UART data lost
 
+static uint8_t cur_r = 0, cur_g = 0, cur_b = 0;
 
 bool connectionGood = false;
 bool dataReceived = false;
@@ -60,8 +61,10 @@ void initLed() {
 }
 
 void setLedColor(uint8_t r, uint8_t g, uint8_t b) {
+    if (r == cur_r && g == cur_g && b == cur_b) return; // ingen ändring, skippa show()
+    cur_r = r; cur_g = g; cur_b = b;
     strip.setPixelColor(0, strip.Color(r, g, b));
-    strip.show();
+    strip.show(); // anropas bara vid faktisk förändring
 }
 
 void data_timeoutCheck() {
