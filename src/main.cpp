@@ -235,23 +235,18 @@ int16_t uart_yaw = 0;
 CRSF crsf_uart;
 HardwareSerial dtqsysSerial(DTQSYS_UART_PORT);
 
-int getCrsfChannel(const uint8_t *payload, int ch)
+inline uint16_t getCrsfChannel(const uint8_t *payload, int ch)
 {
-    // varje kanal är 11 bit
     int bitIndex = ch * 11;
-
     int byteIndex = bitIndex / 8;
     int bitOffset = bitIndex % 8;
 
-    uint32_t value = 
-        (payload[byteIndex] |
-        (payload[byteIndex + 1] << 8) |
-        (payload[byteIndex + 2] << 16));
+    uint32_t value =
+        ((uint32_t)payload[byteIndex]) |
+        ((uint32_t)payload[byteIndex + 1] << 8) |
+        ((uint32_t)payload[byteIndex + 2] << 16);
 
-    value >>= bitOffset;
-    value &= 0x7FF; // 11 bit mask
-
-    return (int)value; // 0–2047
+    return (uint16_t)((value >> bitOffset) & 0x7FF);
 }
 
 // ===============================

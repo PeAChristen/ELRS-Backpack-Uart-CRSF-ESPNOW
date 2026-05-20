@@ -8,6 +8,13 @@ void FakeVRXFakeTrainer::init(const uint8_t* uid)
     memcpy(_uid, uid, 6);
 }
 
+inline void addLE16(mspPacket_t &pkt, uint16_t v)
+{
+    pkt.addByte(v & 0xFF);
+    pkt.addByte(v >> 8);
+}
+
+
 void FakeVRXFakeTrainer::sendFakeHeadtracking(uint16_t pan, uint16_t roll, uint16_t tilt)
 {
     mspPacket_t packet;
@@ -16,14 +23,9 @@ void FakeVRXFakeTrainer::sendFakeHeadtracking(uint16_t pan, uint16_t roll, uint1
     packet.function = MSP_ELRS_BACKPACK_SET_PTR;
 
     // Adding channels in little-endian format (LSB first, MSB second)
-    packet.addByte(pan & 0xFF); // Adding channels in little-endian format (LSB first) by masking with 0xFF to get the lower byte
-    packet.addByte(pan >> 8);   // Adding channels in little-endian format (MSB second) by shifting right 8 bits to get the upper byte
-
-    packet.addByte(roll & 0xFF);
-    packet.addByte(roll >> 8);
-
-    packet.addByte(tilt & 0xFF);
-    packet.addByte(tilt >> 8);
+    addLE16(packet, pan);
+    addLE16(packet, roll);
+    addLE16(packet, tilt);
 
     uint8_t buf[64];
     uint8_t size = recv_msp.convertToByteArray(&packet, buf);
